@@ -30,6 +30,7 @@ class Firebase {
     this.db = app.database();
 
     this.googleProvider = new app.auth.GoogleAuthProvider();
+    this.facebookProvider = new app.auth.FacebookAuthProvider();
   }
 
   // Merge auth and db user api
@@ -73,6 +74,8 @@ class Firebase {
   doPasswordUpdate = password => this.auth.currentUser.updatePassword(password);
 
   doSignInWithGoogle = () => this.auth.signInWithPopup(this.googleProvider);
+
+  doSignInWithFacebook = () => this.auth.signInWithPopup(this.facebookProvider);
 
   user = uid => this.db.ref(`users/${uid}`);
 
