@@ -63,8 +63,6 @@ class Firebase {
       }
     });
 
-  // User api
-
   doCreateUserWithEmailAndPassword = (email, password) =>
     this.auth.createUserWithEmailAndPassword(email, password);
 
@@ -88,9 +86,13 @@ class Firebase {
 
   doSignInWithTwitter = () => this.auth.signInWithPopup(this.twitterProvider);
 
+  // *** User API ***
   user = uid => this.db.ref(`users/${uid}`);
-
   users = () => this.db.ref('users');
+
+  // *** Message API ***
+  message = uid => this.db.ref(`messages/${uid}`);
+  messages = () => this.db.ref('messages');
 }
 
 export default Firebase;
