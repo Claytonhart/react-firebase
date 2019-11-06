@@ -26,37 +26,53 @@ class MessagesBase extends Component {
     this.state = {
       text: '',
       loading: false,
-      messages: []
+      messages: [],
+      limit: 5
     };
   }
 
   componentDidMount() {
-    this.setState({ loading: true });
-    this.props.firebase.messages().on('value', snapshot => {
-      const messageObject = snapshot.val();
-      if (messageObject) {
-        const messageList = Object.keys(messageObject).map(key => ({
-          ...messageObject[key],
-          uid: key
-        }));
-
-        // convert messages list from snapshot
-        this.setState({
-          messages: messageList,
-          loading: false
-        });
-      } else {
-        this.setState({ messages: null, loading: false });
-      }
-    });
+    this.onListenForMessages();
   }
 
   componentWillUnmount() {
     this.props.firebase.messages().off();
   }
 
+  onListenForMessages() {
+    this.setState({ loading: true });
+    this.props.firebase
+      .messages()
+      .orderByChild('createdAt')
+      .limitToLast(this.state.limit)
+      .on('value', snapshot => {
+        const messageObject = snapshot.val();
+        if (messageObject) {
+          const messageList = Object.keys(messageObject).map(key => ({
+            ...messageObject[key],
+            uid: key
+          }));
+
+          // convert messages list from snapshot
+          this.setState({
+            messages: messageList.reverse(),
+            loading: false
+          });
+        } else {
+          this.setState({ messages: null, loading: false });
+        }
+      });
+  }
+
   onChangeText = event => {
     this.setState({ text: event.target.value });
+  };
+
+  onNextPage = () => {
+    this.setState(
+      state => ({ limit: state.limit + 5 }),
+      this.onListenForMessages
+    );
   };
 
   onCreateMessage = (event, authUser) => {
@@ -91,6 +107,12 @@ class MessagesBase extends Component {
       <AuthUserContext.Consumer>
         {authUser => (
           <div>
+            {!loading && messages && (
+              <button type='button' onClick={this.onNextPage}>
+                More
+              </button>
+            )}
+
             {loading && <div>Loading ...</div>}
 
             {messages ? (
@@ -173,7 +195,7 @@ class MessageItem extends Component {
           />
         ) : (
           <span>
-            {/* <strong>{message.user.username || message.user.userId}</strong> */}
+            <strong>{authUser.username || message.userId}</strong>
             {message.text} {message.editedAt && <span>(Edited)</span>}
           </span>
         )}
