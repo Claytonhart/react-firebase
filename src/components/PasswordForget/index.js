@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { withFirebase } from '../Firebase';
 import * as ROUTES from '../../constants/routes';
@@ -11,54 +11,52 @@ const PasswordForgetPage = () => (
 );
 
 const INITIAL_STATE = {
-  email: '',
-  error: null
+  email: ''
 };
 
-class PasswordForgetFormBase extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { ...INITIAL_STATE };
-  }
+const PasswordForgetFormBase = props => {
+  const [formValues, setFormValues] = useState(INITIAL_STATE);
+  const [error, setError] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
 
-  onSubmit = event => {
-    const { email } = this.state;
-    this.props.firebase
+  const onSubmit = event => {
+    const { email } = formValues;
+    props.firebase
       .doPasswordReset(email)
       .then(() => {
-        this.setState({ ...INITIAL_STATE });
+        setFormValues({ ...INITIAL_STATE });
+        setSubmitted(true);
       })
       .catch(error => {
-        this.setState({ error });
+        setError(error);
       });
     event.preventDefault();
   };
 
-  onChange = event => {
-    this.setState({ [event.target.name]: event.target.value });
+  const onChange = event => {
+    setFormValues({ ...formValues, [event.target.name]: event.target.value });
   };
 
-  render() {
-    const { email, error } = this.state;
-    const isInvalid = email === '';
+  const { email } = formValues;
+  const isInvalid = email === '';
 
-    return (
-      <form onSubmit={this.onSubmit}>
-        <input
-          name='email'
-          value={this.state.email}
-          onChange={this.onChange}
-          type='text'
-          placeholder='Email Address'
-        />
-        <button disabled={isInvalid} type='submit'>
-          Reset My Password
-        </button>
-        {error && <p>{error.message}</p>}
-      </form>
-    );
-  }
-}
+  return (
+    <form onSubmit={onSubmit}>
+      <input
+        name='email'
+        value={formValues.email}
+        onChange={onChange}
+        type='text'
+        placeholder='Email Address'
+      />
+      <button disabled={isInvalid} type='submit'>
+        Reset My Password
+      </button>
+      {error && <p>{error.message}</p>}
+      {submitted && <p>Check your email for a link to reset your password.</p>}
+    </form>
+  );
+};
 
 const PasswordForgetLink = () => (
   <p>

@@ -21,8 +21,7 @@ const SignInPage = () => (
 
 const INITIAL_STATE = {
   email: '',
-  password: '',
-  error: null
+  password: ''
 };
 
 // Social signin errors

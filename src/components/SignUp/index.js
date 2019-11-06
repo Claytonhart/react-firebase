@@ -18,8 +18,7 @@ const INITIAL_FORM_VALUES = {
   email: '',
   passwordOne: '',
   passwordTwo: '',
-  isAdmin: false,
-  error: null
+  isAdmin: false
 };
 
 // Email & password signup errors
