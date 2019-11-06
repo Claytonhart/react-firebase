@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import { Link, withRouter } from 'react-router-dom';
 import { compose } from 'recompose';
 
@@ -13,7 +13,7 @@ const SignUpPage = () => (
   </div>
 );
 
-const INITIAL_STATE = {
+const INITIAL_FORM_VALUES = {
   username: '',
   email: '',
   passwordOne: '',
@@ -33,119 +33,108 @@ to sign-in with one of them. Afterward, associate your accounts
 on your personal account page.
 `;
 
-class SignUpFormBase extends Component {
-  constructor(props) {
-    super(props);
+const SignUpFormBase = props => {
+  const [formValues, setFormValues] = useState(INITIAL_FORM_VALUES);
+  const [error, setError] = useState(null);
 
-    this.state = { ...INITIAL_STATE };
-  }
+  const onSubmit = event => {
+    event.preventDefault();
 
-  onSubmit = event => {
-    const { username, email, passwordOne, isAdmin } = this.state;
+    const { username, email, passwordOne, isAdmin } = formValues;
 
     const roles = {};
     if (isAdmin) {
       roles[ROLES.ADMIN] = ROLES.ADMIN;
     }
 
-    this.props.firebase
+    props.firebase
       .doCreateUserWithEmailAndPassword(email, passwordOne)
       .then(authUser => {
         // Create a user in the Firebase realtime database w/ specific role
-        return this.props.firebase.user(authUser.user.uid).set({
+        return props.firebase.user(authUser.user.uid).set({
           username,
           email,
           roles
         });
       })
       .then(() => {
-        return this.props.firebase.doSendEmailVerification();
+        return props.firebase.doSendEmailVerification();
       })
       .then(() => {
-        this.setState({ ...INITIAL_STATE });
-        this.props.history.push(ROUTES.HOME);
+        setFormValues({ ...INITIAL_FORM_VALUES });
+        props.history.push(ROUTES.HOME);
       })
       .catch(error => {
         if (error.code === ERROR_CODE_ACCOUNT_EXISTS) {
           error.message = ERROR_MSG_ACCOUNT_EXISTS;
         }
 
-        this.setState({ error });
+        setError(error);
       });
-    event.preventDefault();
   };
 
-  onChange = event => {
-    this.setState({ [event.target.name]: event.target.value });
+  const onChange = event => {
+    setFormValues({ ...formValues, [event.target.name]: event.target.value });
   };
 
-  onChangeCheckbox = event => {
-    this.setState({ [event.target.name]: event.target.checked });
+  const onChangeCheckbox = event => {
+    setFormValues({ ...formValues, [event.target.name]: event.target.checked });
   };
 
-  render() {
-    const {
-      username,
-      email,
-      passwordOne,
-      passwordTwo,
-      isAdmin,
-      error
-    } = this.state;
+  const { username, email, passwordOne, passwordTwo, isAdmin } = formValues;
 
-    const isInvalid =
-      passwordOne !== passwordTwo ||
-      passwordOne === '' ||
-      email === '' ||
-      username === '';
+  const isInvalid =
+    passwordOne !== passwordTwo ||
+    passwordOne === '' ||
+    email === '' ||
+    username === '';
 
-    return (
-      <form onSubmit={this.onSubmit}>
+  return (
+    <form onSubmit={onSubmit}>
+      <input
+        name='username'
+        value={username}
+        onChange={onChange}
+        type='text'
+        placeholder='Full Name'
+      />
+      <input
+        name='email'
+        value={email}
+        onChange={onChange}
+        type='text'
+        placeholder='Email Address'
+      />
+      <input
+        name='passwordOne'
+        value={passwordOne}
+        onChange={onChange}
+        type='password'
+        placeholder='Password'
+      />
+      <input
+        name='passwordTwo'
+        value={passwordTwo}
+        onChange={onChange}
+        type='password'
+        placeholder='Confirm Password'
+      />
+      <label>
+        Admin:
         <input
-          name='username'
-          value={username}
-          onChange={this.onChange}
-          type='text'
-          placeholder='Full Name'
+          name='isAdmin'
+          type='checkbox'
+          checked={isAdmin}
+          onChange={onChangeCheckbox}
         />
-        <input
-          name='email'
-          value={email}
-          onChange={this.onChange}
-          type='text'
-          placeholder='Email Address'
-        />
-        <input
-          name='passwordOne'
-          value={passwordOne}
-          onChange={this.onChange}
-          type='password'
-          placeholder='Password'
-        />
-        <input
-          name='passwordTwo'
-          value={passwordTwo}
-          onChange={this.onChange}
-          type='password'
-          placeholder='Confirm Password'
-        />
-        <label>
-          Admin:
-          <input
-            name='isAdmin'
-            type='checkbox'
-            checked={isAdmin}
-            onChange={this.onChangeCheckbox}
-          />
-        </label>
-        <button disabled={isInvalid} type='submit'>
-          Sign Up
-        </button>
-        {error && <p>{error.message}</p>}
-      </form>
-    );
-  }
-}
+      </label>
+      <button disabled={isInvalid} type='submit'>
+        Sign Up
+      </button>
+      {error && <p>{error.message}</p>}
+    </form>
+  );
+};
 
 const SignUpLink = () => (
   <p>
